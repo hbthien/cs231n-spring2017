@@ -378,7 +378,7 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     S, P = conv_param['stride'], conv_param['pad']
     N, C, H, W = x.shape
-    F, C, HH, WW = w.shape
+    F, C, HH, WW = w.shape #(F, C, HH, WW)
     H1 = (H+2*P-HH)//S+1 #integer division
     W1 = (W+2*P-WW)//S+1
     out = np.zeros([N, F, H1, W1])
@@ -386,8 +386,8 @@ def conv_forward_naive(x, w, b, conv_param):
     
     for i in range(H1):
         for j in range(W1):
-            temp = padded_x[:, :, i*S:(i*S+HH), j*S:(j*S+WW)]
-            out[:, :, i, j] = np.tensordot(temp, w, axes=[(1,2,3), (1,2,3)]) 
+            temp = padded_x[:, :, i*S:(i*S+HH), j*S:(j*S+WW)] #(N, C, HH, WW)
+            out[:, :, i, j] = np.tensordot(temp, w, axes=[(1,2,3), (1,2,3)]) #(N, F)
     out += b.reshape([F,1,1]) #(N,F,H1,W1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -414,24 +414,24 @@ def conv_backward_naive(dout, cache):
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
     x, w, b, conv_param = cache
-    N, F, H, W = x.shape
-    F, C, HH, WW = w.shape
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape #(F, C, HH, WW)
     N, F, H1, W1 = dout.shape
     S, P = conv_param['stride'], conv_param['pad']
-    padded_x = np.pad(x, [(0,0), (0,0), (P,P), (P,P)], mode='constant')
+    padded_x = np.pad(x, [(0,0), (0,0), (P,P), (P,P)], mode='constant') #(N, C, H+2P, W+2P)
   
-    db = np.sum(dout, axis=(0,2,3))
-    dpadded_x = np.zeros_like(padded_x)
-    dw = np.zeros_like(w)
+    db = np.sum(dout, axis=(0,2,3)) #(F,)
+    dpadded_x = np.zeros_like(padded_x) #(N, C, H+2P, W+2P)
+    dw = np.zeros_like(w) #(F,C,HH,WW)
 
     for i in range(H1):                                       
         for j in range(W1):
-            temp = padded_x[:, :, i*S:(i*S+HH), j*S:(j*S+WW)]
+            temp = padded_x[:, :, i*S:(i*S+HH), j*S:(j*S+WW)] #(N, C, HH, WW)
             #update dw
-            dw += np.tensordot(dout[:,:,i,j], temp, axes=[0,0])
+            dw += np.tensordot(dout[:,:,i,j], temp, axes=(0,0)) #(N,F)x(N,C,HH,WW)=>(F,C,HH,WW)
             #update dpadded_x
-            dpadded_x[:, :, i*S:(i*S+HH), j*S:(j*S+WW)] += np.tensordot(dout[:,:,i,j], temp, axes=[1,0])
-    dx = dpadded_x[:, :, P:(-P), P:(-P)]
+            dpadded_x[:, :, i*S:(i*S+HH), j*S:(j*S+WW)] += np.tensordot(dout[:,:,i,j], w, axes=(1,0)) # (N,F)x(F,C,HH,WW) => (N,C,HH,WW)
+    dx = dpadded_x[:, :, P:(-P), P:(-P)] #(N,C,H,W)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -457,7 +457,16 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
-    pass
+    PH, PW, S = pool_param['pool_height'], pool_param['pool_width'], pool_param['stride']
+    N, C, H, W = x.shape
+
+    H1 = (H-PH)//S + 1
+    W1 = (W-PW)//S + 1
+    out = np.zeros((N, C, H1, W1))
+    
+    for i in range(H1):
+        for j in range(W1):
+            out[:,:,i,j] = np.amax(x[:,:, i*S:i*S+PH, j*S:j*S+PW], axis=(2,3)) #(N, C, H1, W1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -480,7 +489,25 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the max pooling backward pass                           #
     ###########################################################################
-    pass
+    x, pool_param = cache
+    PH, PW, S = pool_param['pool_height'], pool_param['pool_width'], pool_param['stride']
+    N, C, H, W = x.shape
+    N, C, H1, W1 = dout.shape
+    
+    H1 = (H-PH)//S + 1 #we can use H1,W1 directly from dout.shape
+    W1 = (W-PW)//S + 1
+    dx = np.zeros_like(x) 
+
+    for n in range(N):
+        for c in range(C):
+            for i in range(H1):
+                for j in range(W1):
+                    max_index = np.argmax(x[n, c, i*S:i*S+PH, j*S:j*S+PW])
+                    #Converts an array of flat indices into a tuple of coordinate arrays
+                    max_coord = np.unravel_index(max_index, [PH, PW])
+                    #print(max_index, max_coord)
+                    #backprop the dout to the max location
+                    dx[n, c, i*S:i*S+PH, j*S:j*S+PW][max_coord] = dout[n, c, i, j]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
