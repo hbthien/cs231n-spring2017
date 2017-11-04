@@ -26,7 +26,7 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     N=x.shape[0]
-    out = x.reshape([N,-1])*dot(w)+b
+    out = np.dot(np.reshape(x,[N,-1]), w)+b #get the first and the product of the remaining
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -55,9 +55,9 @@ def affine_backward(dout, cache):
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     N = x.shape[0]
-    dx = dout.dot(w.T).reshape(x.shape)
+    db = np.sum(dout, axis=0)           #db=dout
+    dx = dout.dot(w.T).reshape(x.shape) #dx=w*dout
     dw = x.reshape([N,-1]).T.dot(dout)  #(DxN)x(NxM)=(DxM)
-    db = np.sum(dout, axis=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -79,7 +79,7 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
-    out = np.fmax(x,0) #Element-wise maximum of array elements
+    out = np.fmax(x,0) #max of each variable of x
     
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -545,7 +545,9 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    max_index = s
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
