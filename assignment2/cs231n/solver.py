@@ -142,7 +142,7 @@ class Solver(object):
         # name with the actual function
         if not hasattr(optim, self.update_rule):
             raise ValueError('Invalid update_rule "%s"' % self.update_rule)
-        self.update_rule = getattr(optim, self.update_rule)
+        self.update_rule = getattr(optim, self.update_rule) #this points to a function in 'optim.py'
 
         self._reset()
 
@@ -174,7 +174,7 @@ class Solver(object):
         """
         # Make a minibatch of training data
         num_train = self.X_train.shape[0]
-        batch_mask = np.random.choice(num_train, self.batch_size)
+        batch_mask = np.random.choice(num_train, self.batch_size)#an array that is a uniform random sample from np.arrange(num_train) of size batch_size
         X_batch = self.X_train[batch_mask]
         y_batch = self.y_train[batch_mask]
 
@@ -248,7 +248,7 @@ class Solver(object):
             end = (i + 1) * batch_size
             scores = self.model.loss(X[start:end])
             y_pred.append(np.argmax(scores, axis=1))
-        y_pred = np.hstack(y_pred)
+        y_pred = np.hstack(y_pred) #put into stack horizontally
         acc = np.mean(y_pred == y)
 
         return acc
@@ -260,7 +260,7 @@ class Solver(object):
         """
         num_train = self.X_train.shape[0]
         iterations_per_epoch = max(num_train // self.batch_size, 1)
-        num_iterations = self.num_epochs * iterations_per_epoch
+        num_iterations = self.num_epochs * iterations_per_epoch #note that: 1 iter executes 1 batch
 
         for t in range(num_iterations):
             self._step()

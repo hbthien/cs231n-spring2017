@@ -600,9 +600,17 @@ def svm_loss(x, y):
     - dx: Gradient of the loss with respect to x
     """
     N = x.shape[0]
-    correct_class_scores = x[np.arange(N), y]
-    margins = np.maximum(0, x - correct_class_scores[:, np.newaxis] + 1.0)
-    margins[np.arange(N), y] = 0
+    correct_class_scores = x[np.arange(N), y] #shape=(N,), for each x[i,] only get the value of position that gives the score of class
+    #x.shape=(N,C); y.shape=(N,);
+    #correct_class_scores[:, np.newaxis].shape = (N,1)
+    #(x - correct_class_scores[:, np.newaxis]).shape=(N,C)
+    #print(x[0],"---",(correct_class_scores[:, np.newaxis])[0])
+    margins = np.maximum(0, x - correct_class_scores[:, np.newaxis] + 1.0) #add new dimension, with Delta=1.0
+    #print(margins[1], "---aaaa----")
+    margins[np.arange(N), y] = 0 
+    #print(margins.shape, y)
+    #print(margins[1], "----bbbb----")
+    
     loss = np.sum(margins) / N
     num_pos = np.sum(margins > 0, axis=1)
     dx = np.zeros_like(x)
@@ -626,10 +634,10 @@ def softmax_loss(x, y):
     - loss: Scalar giving the loss
     - dx: Gradient of the loss with respect to x
     """
-    shifted_logits = x - np.max(x, axis=1, keepdims=True)
-    Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True)
-    log_probs = shifted_logits - np.log(Z)
-    probs = np.exp(log_probs)
+    shifted_logits = x - np.max(x, axis=1, keepdims=True) #(N,C)
+    Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True) #(N,1)
+    log_probs = shifted_logits - np.log(Z) #(N,C)
+    probs = np.exp(log_probs) #(N,C)
     N = x.shape[0]
     loss = -np.sum(log_probs[np.arange(N), y]) / N
     dx = probs.copy()
