@@ -175,7 +175,21 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to one and shift      #
         # parameters should be initialized to zero.                                #
         ############################################################################
-        pass
+        if self.num_layers>1:
+            for i in range(self.num_layers):
+                if i==0:
+                    self.params['W1'] = np.random.normal(scale=weight_scale, size=[input_dim, hidden_dims[0]])
+                    self.params['b1'] = np.zeros(hidden_dims[0])
+                elif i==self.num_layers-1:
+                    self.params['W'+str(i+1)] = np.random.normal(scale=weight_scale, size=[hidden_dims[i-1], num_classes])
+                    self.params['b'+str(i+1)] = np.zeros(num_classes)                  
+                else:
+                    self.params['W%d' %(i+1)] = np.random.normal(scale=weight_scale, size=[hidden_dims[i-1], hidden_dims[i]])
+                    self.params['b%d' %(i+1)] = np.zeros(hidden_dims[i])
+                if (use_batchnorm):
+                    self.params['gamma%d' %(i+1)] = np.zeros(hidden_dims[i])
+                    self.params['beta%d' %(i+1)] = np.ones(hidden_dims[i]) 
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -233,7 +247,12 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        pass
+        for i in range(self.num_layers):
+            #affine_forward
+            out_a, cache_a = affine_forward(X, self.params['W%d' %(i+1)], self.params['b%d' %(i+1)])
+            #    {affine - [batch norm] - relu - [dropout]} x (L - 1) - affine - softmax
+            #BN forward
+            
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
