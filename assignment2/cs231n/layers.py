@@ -174,9 +174,9 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # variables.                                                          #
         #######################################################################
         sample_mean = np.mean(x, axis=0)
-        sampel_var = np.var(x, axis=0)
+        sample_var = np.var(x, axis=0)
         x_hat = (x-sample_mean)/np.sqrt(sample_var+eps)
-        out = x_hat*gamma+beta
+        out = x_hat * gamma + beta
         running_mean = momentum * running_mean + (1-momentum)*sample_mean
         running_var = momentum * running_var + (1-momentum)*sample_var
         cache = (x, x_hat, sample_mean, sample_var, gamma, beta, eps)
@@ -304,6 +304,7 @@ def dropout_forward(x, dropout_param):
         # Store the dropout mask in the mask variable.                        #
         #######################################################################
         mask = np.random.binomial(1, 1-p, size=x.shape)
+        #print("Mask: ", mask.shape, mask)
         out = x * mask
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -601,17 +602,14 @@ def svm_loss(x, y):
     """
     N = x.shape[0]
     correct_class_scores = x[np.arange(N), y] #shape=(N,), for each x[i,] only get the value of position that gives the score of class
-    #x.shape=(N,C); y.shape=(N,);
     #correct_class_scores[:, np.newaxis].shape = (N,1)
     #(x - correct_class_scores[:, np.newaxis]).shape=(N,C)
     #print(x[0],"---",(correct_class_scores[:, np.newaxis])[0])
-    margins = np.maximum(0, x - correct_class_scores[:, np.newaxis] + 1.0) #add new dimension, with Delta=1.0
-    #print(margins[1], "---aaaa----")
+    margins = np.maximum(0, x - correct_class_scores[:, np.newaxis] + 1.0) #add new dimension, with Delta=1.0, margins.shape=(N,C)
     margins[np.arange(N), y] = 0 
-    #print(margins.shape, y)
-    #print(margins[1], "----bbbb----")
     
     loss = np.sum(margins) / N
+
     num_pos = np.sum(margins > 0, axis=1)
     dx = np.zeros_like(x)
     dx[margins > 0] = 1
@@ -636,10 +634,11 @@ def softmax_loss(x, y):
     """
     shifted_logits = x - np.max(x, axis=1, keepdims=True) #(N,C)
     Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True) #(N,1)
-    log_probs = shifted_logits - np.log(Z) #(N,C)
+    log_probs = shifted_logits - np.log(Z) #(N,C), log_probs_i=f_{y_i} + log(\sigma_j e^{f_j})
     probs = np.exp(log_probs) #(N,C)
     N = x.shape[0]
     loss = -np.sum(log_probs[np.arange(N), y]) / N
+
     dx = probs.copy()
     dx[np.arange(N), y] -= 1
     dx /= N
